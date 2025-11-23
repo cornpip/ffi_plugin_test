@@ -17,12 +17,18 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   late int sumResult;
   late Future<int> sumAsyncResult;
+  late List<double> matrixResult;
 
   @override
   void initState() {
     super.initState();
     sumResult = ffi_plugin_look.sum(1, 2);
     sumAsyncResult = ffi_plugin_look.sumAsync(3, 4);
+    matrixResult = ffi_plugin_look.multiplyMatrices(
+      const [1, 2, 3, 4],
+      const [5, 6, 7, 8],
+      2,
+    );
   }
 
   @override
@@ -48,6 +54,12 @@ class _MyAppState extends State<MyApp> {
                 spacerSmall,
                 Text(
                   'sum(1, 2) = $sumResult',
+                  style: textStyle,
+                  textAlign: TextAlign.center,
+                ),
+                spacerSmall,
+                Text(
+                  'Matrix result = ${matrixResult.map((v) => v.toStringAsFixed(0)).toList()}',
                   style: textStyle,
                   textAlign: TextAlign.center,
                 ),
