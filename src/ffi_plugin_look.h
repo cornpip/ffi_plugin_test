@@ -28,3 +28,10 @@ FFI_PLUGIN_EXPORT int sum(int a, int b);
 // block Dart execution. This will cause dropped frames in Flutter applications.
 // Instead, call these native functions on a separate isolate.
 FFI_PLUGIN_EXPORT int sum_long_running(int a, int b);
+
+// Multiplies two square matrices of size `dimension` x `dimension`.
+//
+// Matrices are passed in row-major order and the result buffer must have
+// space for `dimension * dimension` doubles.
+FFI_PLUGIN_EXPORT void multiply_matrices(const double* a, const double* b,
+                                         double* result, int dimension);

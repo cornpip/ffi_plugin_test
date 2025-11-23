@@ -21,3 +21,16 @@ FFI_PLUGIN_EXPORT int sum_long_running(int a, int b) {
 #endif
   return a + b;
 }
+
+FFI_PLUGIN_EXPORT void multiply_matrices(const double* a, const double* b,
+                                         double* result, int dimension) {
+  for (int row = 0; row < dimension; row++) {
+    for (int col = 0; col < dimension; col++) {
+      double value = 0.0;
+      for (int k = 0; k < dimension; k++) {
+        value += a[row * dimension + k] * b[k * dimension + col];
+      }
+      result[row * dimension + col] = value;
+    }
+  }
+}

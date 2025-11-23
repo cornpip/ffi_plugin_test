@@ -1,8 +1,11 @@
 
 import 'dart:async';
 import 'dart:ffi';
+import 'dart:ffi' as ffi;
 import 'dart:io';
 import 'dart:isolate';
+
+import 'package:ffi/ffi.dart' as ffi;
 
 import 'ffi_plugin_look_bindings_generated.dart';
 
@@ -12,6 +15,40 @@ import 'ffi_plugin_look_bindings_generated.dart';
 /// They will block the Dart execution while running the native function, so
 /// only do this for native functions which are guaranteed to be short-lived.
 int sum(int a, int b) => _bindings.sum(a, b);
+
+/// Multiplies two [dimension] x [dimension] matrices given in row-major order.
+///
+/// The returned list contains the result matrix flattened in row-major order.
+List<double> multiplyMatrices(
+  List<double> matrixA,
+  List<double> matrixB,
+  int dimension,
+) {
+  final int elementCount = dimension * dimension;
+  if (matrixA.length != elementCount || matrixB.length != elementCount) {
+    throw ArgumentError(
+      'Each matrix must contain $elementCount values '
+      '(${dimension}x$dimension in row-major order).',
+    );
+  }
+
+  final ffi.Pointer<ffi.Double> aPtr = ffi.calloc<ffi.Double>(elementCount);
+  final ffi.Pointer<ffi.Double> bPtr = ffi.calloc<ffi.Double>(elementCount);
+  final ffi.Pointer<ffi.Double> resultPtr = ffi.calloc<ffi.Double>(elementCount);
+
+  try {
+    aPtr.asTypedList(elementCount).setAll(0, matrixA);
+    bPtr.asTypedList(elementCount).setAll(0, matrixB);
+
+    _bindings.multiply_matrices(aPtr, bPtr, resultPtr, dimension);
+
+    return List<double>.from(resultPtr.asTypedList(elementCount));
+  } finally {
+    ffi.calloc.free(aPtr);
+    ffi.calloc.free(bPtr);
+    ffi.calloc.free(resultPtr);
+  }
+}
 
 /// A longer lived native function, which occupies the thread calling it.
 ///
