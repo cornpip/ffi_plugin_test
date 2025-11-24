@@ -4,6 +4,7 @@ import 'dart:ffi';
 import 'dart:ffi' as ffi;
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart' as ffi;
 
@@ -47,6 +48,32 @@ List<double> multiplyMatrices(
     ffi.calloc.free(aPtr);
     ffi.calloc.free(bPtr);
     ffi.calloc.free(resultPtr);
+  }
+}
+
+/// Applies an in-place OpenCV grayscale filter to RGBA pixels and returns a new list.
+Uint8List applyGrayscaleFilter(
+  Uint8List rgbaPixels,
+  int width,
+  int height,
+) {
+  final int expectedBytes = width * height * 4;
+  if (rgbaPixels.lengthInBytes != expectedBytes) {
+    throw ArgumentError(
+      'rgbaPixels must contain exactly $expectedBytes bytes for the provided '
+      'dimensions ($width x $height).',
+    );
+  }
+
+  final ffi.Pointer<ffi.Uint8> pixelPtr =
+      ffi.calloc<ffi.Uint8>(rgbaPixels.lengthInBytes);
+
+  try {
+    pixelPtr.asTypedList(rgbaPixels.lengthInBytes).setAll(0, rgbaPixels);
+    _bindings.apply_grayscale_filter(pixelPtr, width, height);
+    return Uint8List.fromList(pixelPtr.asTypedList(rgbaPixels.lengthInBytes));
+  } finally {
+    ffi.calloc.free(pixelPtr);
   }
 }
 

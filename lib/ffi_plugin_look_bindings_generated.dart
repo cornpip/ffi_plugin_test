@@ -88,4 +88,26 @@ class FfiPluginLookBindings {
           int,
         )
       >();
+
+  /// Applies a grayscale filter to an RGBA buffer in-place.
+  void apply_grayscale_filter(
+    ffi.Pointer<ffi.Uint8> rgba_pixels,
+    int width,
+    int height,
+  ) {
+    return _apply_grayscale_filter(rgba_pixels, width, height);
+  }
+
+  late final _apply_grayscale_filterPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Uint8>,
+            ffi.Int,
+            ffi.Int,
+          )
+        >
+      >('apply_grayscale_filter');
+  late final _apply_grayscale_filter = _apply_grayscale_filterPtr
+      .asFunction<void Function(ffi.Pointer<ffi.Uint8>, int, int)>();
 }

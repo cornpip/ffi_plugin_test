@@ -15,6 +15,10 @@
 #define FFI_PLUGIN_EXPORT
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // A very short-lived native function.
 //
 // For very short-lived functions, it is fine to call them on the main isolate.
@@ -35,3 +39,14 @@ FFI_PLUGIN_EXPORT int sum_long_running(int a, int b);
 // space for `dimension * dimension` doubles.
 FFI_PLUGIN_EXPORT void multiply_matrices(const double* a, const double* b,
                                          double* result, int dimension);
+
+// Applies a grayscale filter to an in-memory RGBA image.
+//
+// `rgba_pixels` must contain `width * height * 4` bytes since the operation
+// is performed in-place.
+FFI_PLUGIN_EXPORT void apply_grayscale_filter(uint8_t* rgba_pixels, int width,
+                                              int height);
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
