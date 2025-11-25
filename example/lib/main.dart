@@ -183,6 +183,47 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  Future<void> _runHeavyBlurBlockingDemo() async {
+    final Uint8List? pixels = _heavyPixels;
+    if (pixels == null || _isHeavyBlurProcessing) {
+      return;
+    }
+    setState(() {
+      _isHeavyBlurProcessing = true;
+      _heavyBlurredImage = null;
+      _heavyBlurError = null;
+    });
+
+    try {
+      final Uint8List filtered = ffi_plugin_look.applyHeavyBlurBlocking(
+        pixels,
+        _heavyDemoWidth,
+        _heavyDemoHeight,
+        iterations: 1000,
+      );
+      final ui.Image image = await _decodeRgbaToImage(
+        filtered,
+        _heavyDemoWidth,
+        _heavyDemoHeight,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _heavyBlurredImage = image;
+        _isHeavyBlurProcessing = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isHeavyBlurProcessing = false;
+        _heavyBlurError = error.toString();
+      });
+    }
+  }
+
   Widget _buildImagePreview({
     required String label,
     required ui.Image? image,
@@ -224,12 +265,14 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    const textStyle = TextStyle(fontSize: 25);
+    const textStyle = TextStyle(fontSize: 20);
+    const textStyle2 = TextStyle(fontSize: 14);
     const spacerSmall = SizedBox(height: 10);
     const spacerLarge = SizedBox(height: 30);
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
+          scrolledUnderElevation: 0,
           title: const Text('Native Packages'),
         ),
         body: SingleChildScrollView(
@@ -237,12 +280,6 @@ class _MyAppState extends State<MyApp> {
             padding: const EdgeInsets.all(10),
             child: Column(
               children: [
-                const Text(
-                  'This calls a native function through FFI that is shipped as source in the package. '
-                  'The native code is built as part of the Flutter Runner build.',
-                  style: textStyle,
-                  textAlign: TextAlign.center,
-                ),
                 spacerSmall,
                 Text(
                   'sum(1, 2) = $sumResult',
@@ -270,33 +307,34 @@ class _MyAppState extends State<MyApp> {
                 ),
                 spacerLarge,
                 const Text(
-                  'OpenCV 회색조 예제',
+                  'OpenCV Grayscale Demo',
                   style: textStyle,
                   textAlign: TextAlign.center,
                 ),
                 spacerSmall,
                 const Text(
-                  '샘플 RGBA 버퍼를 네이티브 OpenCV로 보내 회색조로 변환합니다.',
+                  'Send a sample RGBA buffer to native OpenCV and convert it to grayscale.',
+                  style: textStyle2,
                   textAlign: TextAlign.center,
                 ),
                 spacerSmall,
                 Row(
                   children: [
                     _buildImagePreview(
-                      label: '원본',
+                      label: 'Original',
                       image: _originalImage,
                       aspectRatio: _demoWidth / _demoHeight,
-                      placeholder: const Text('생성 중...'),
+                      placeholder: const Text('Preparing...'),
                     ),
                     const SizedBox(width: 16),
                     _buildImagePreview(
-                      label: '회색조',
+                      label: 'Grayscale',
                       image: _grayscaleImage,
                       aspectRatio: _demoWidth / _demoHeight,
                       placeholder: Text(
                         _isGrayscaleProcessing
-                            ? '처리 중...'
-                            : '버튼을 눌러주세요',
+                            ? 'Processing...'
+                            : 'Tap the button to run',
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -309,48 +347,57 @@ class _MyAppState extends State<MyApp> {
                           ? null
                           : _runGrayscaleFilter,
                   child: Text(
-                    _isGrayscaleProcessing ? '처리 중...' : 'OpenCV 필터 실행',
+                    _isGrayscaleProcessing ? 'Processing...' : 'Run OpenCV filter',
                   ),
                 ),
                 spacerLarge,
                 const Text(
-                  '무거운 Gaussian Blur (Isolate + OpenCV)',
+                  'Heavy Gaussian Blur (Isolate + OpenCV)',
                   style: textStyle,
                   textAlign: TextAlign.center,
                 ),
                 spacerSmall,
                 const Text(
-                  '_helperIsolateSendPort를 통해 별도 isolate에서 반복 블러를 실행합니다.',
+                  'Run repeated blur on a helper isolate via _helperIsolateSendPort.',
+                  style: textStyle2,
                   textAlign: TextAlign.center,
                 ),
                 spacerSmall,
                 Row(
                   children: [
                     _buildImagePreview(
-                      label: '원본 512x512',
+                      label: 'Source 512x512',
                       image: _heavyOriginalImage,
                       aspectRatio: _heavyDemoWidth / _heavyDemoHeight,
-                      placeholder: const Text('생성 중...'),
+                      placeholder: const Text('Preparing...'),
                     ),
                     const SizedBox(width: 16),
                     _buildImagePreview(
-                      label: '블러 결과',
+                      label: 'Blur result',
                       image: _heavyBlurredImage,
                       aspectRatio: _heavyDemoWidth / _heavyDemoHeight,
                       placeholder: _isHeavyBlurProcessing
-                          ? const SizedBox(
-                              width: 32,
-                              height: 32,
-                              child: CircularProgressIndicator(strokeWidth: 3),
+                          ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                SizedBox(
+                                  width: 32,
+                                  height: 32,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 3),
+                                ),
+                                SizedBox(height: 8),
+                                Text('Loading...'),
+                              ],
                             )
-                          : const Text('버튼을 눌러주세요'),
+                          : const Text('Tap the button to run'),
                     ),
                   ],
                 ),
                 if (_heavyBlurError != null) ...[
                   spacerSmall,
                   Text(
-                    '오류: $_heavyBlurError',
+                    'Error: $_heavyBlurError',
                     style: const TextStyle(color: Colors.red),
                     textAlign: TextAlign.center,
                   ),
@@ -362,9 +409,28 @@ class _MyAppState extends State<MyApp> {
                           ? null
                           : _runHeavyBlurDemo,
                   child: Text(
-                    _isHeavyBlurProcessing ? '실행 중...' : '무거운 Blur 실행',
+                    _isHeavyBlurProcessing ? 'Running...' : 'Run heavy blur in isolate',
                   ),
                 ),
+                spacerSmall,
+                const Text(
+                  'Running the same work on the main isolate will freeze the loader above.',
+                  style: textStyle2,
+                  textAlign: TextAlign.center,
+                ),
+                spacerSmall,
+                ElevatedButton(
+                  onPressed:
+                      (_heavyPixels == null || _isHeavyBlurProcessing)
+                          ? null
+                          : _runHeavyBlurBlockingDemo,
+                  child: Text(
+                    _isHeavyBlurProcessing
+                        ? 'Running...'
+                        : 'Run on main isolate (UI freeze test)',
+                  ),
+                ),
+                spacerLarge,
               ],
             ),
           ),

@@ -111,6 +111,16 @@ Future<Uint8List> applyHeavyBlurAsync(
   return completer.future;
 }
 
+/// Synchronous heavy blur call that blocks the caller until completion.
+Uint8List applyHeavyBlurBlocking(
+  Uint8List rgbaPixels,
+  int width,
+  int height, {
+  int iterations = 20,
+}) {
+  return _runHeavyBlurNative(rgbaPixels, width, height, iterations);
+}
+
 Uint8List _runHeavyBlurNative(
   Uint8List rgbaPixels,
   int width,
