@@ -50,3 +50,21 @@ FFI_PLUGIN_EXPORT void apply_grayscale_filter(uint8_t* rgba_pixels, int width,
   cv::Mat rgba_output(height, width, CV_8UC4, rgba_pixels);
   cv::cvtColor(gray, rgba_output, cv::COLOR_GRAY2RGBA);
 }
+
+FFI_PLUGIN_EXPORT void apply_heavy_blur(uint8_t* rgba_pixels, int width,
+                                        int height, int iterations) {
+  if (rgba_pixels == nullptr || width <= 0 || height <= 0 ||
+      iterations <= 0) {
+    return;
+  }
+
+  cv::Mat rgba(height, width, CV_8UC4, rgba_pixels);
+  cv::Mat blurred;
+  const cv::Size kernel_size(31, 31);
+  const double sigma = 11.0;
+
+  for (int i = 0; i < iterations; ++i) {
+    cv::GaussianBlur(rgba, blurred, kernel_size, sigma);
+    blurred.copyTo(rgba);
+  }
+}

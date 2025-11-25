@@ -2,8 +2,6 @@
 name: FfiPluginLookBindings
 description: |
   Bindings for `src/ffi_plugin_look.h`.
-
-  Regenerate bindings with `dart run ffigen --config ffigen.yaml`.
 output: 'lib/ffi_plugin_look_bindings_generated.dart'
 headers:
   entry-points:

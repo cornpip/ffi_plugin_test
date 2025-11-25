@@ -10,8 +10,6 @@ import 'dart:ffi' as ffi;
 
 /// Bindings for `src/ffi_plugin_look.h`.
 ///
-/// Regenerate bindings with `dart run ffigen --config ffigen.yaml`.
-///
 class FfiPluginLookBindings {
   /// Holds the symbol lookup function.
   final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
@@ -89,7 +87,10 @@ class FfiPluginLookBindings {
         )
       >();
 
-  /// Applies a grayscale filter to an RGBA buffer in-place.
+  /// Applies a grayscale filter to an in-memory RGBA image.
+  ///
+  /// `rgba_pixels` must contain `width * height * 4` bytes since the operation
+  /// is performed in-place.
   void apply_grayscale_filter(
     ffi.Pointer<ffi.Uint8> rgba_pixels,
     int width,
@@ -101,13 +102,28 @@ class FfiPluginLookBindings {
   late final _apply_grayscale_filterPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Void Function(
-            ffi.Pointer<ffi.Uint8>,
-            ffi.Int,
-            ffi.Int,
-          )
+          ffi.Void Function(ffi.Pointer<ffi.Uint8>, ffi.Int, ffi.Int)
         >
       >('apply_grayscale_filter');
   late final _apply_grayscale_filter = _apply_grayscale_filterPtr
       .asFunction<void Function(ffi.Pointer<ffi.Uint8>, int, int)>();
+
+  /// Applies repeated heavy Gaussian blur iterations to stress native processing.
+  void apply_heavy_blur(
+    ffi.Pointer<ffi.Uint8> rgba_pixels,
+    int width,
+    int height,
+    int iterations,
+  ) {
+    return _apply_heavy_blur(rgba_pixels, width, height, iterations);
+  }
+
+  late final _apply_heavy_blurPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<ffi.Uint8>, ffi.Int, ffi.Int, ffi.Int)
+        >
+      >('apply_heavy_blur');
+  late final _apply_heavy_blur = _apply_heavy_blurPtr
+      .asFunction<void Function(ffi.Pointer<ffi.Uint8>, int, int, int)>();
 }

@@ -77,6 +77,65 @@ Uint8List applyGrayscaleFilter(
   }
 }
 
+/// Runs an expensive Gaussian blur multiple times on a helper isolate.
+Future<Uint8List> applyHeavyBlurAsync(
+  Uint8List rgbaPixels,
+  int width,
+  int height, {
+  int iterations = 20,
+}) async {
+  final int expectedBytes = width * height * 4;
+  if (rgbaPixels.lengthInBytes != expectedBytes) {
+    throw ArgumentError(
+      'rgbaPixels must contain exactly $expectedBytes bytes for the provided '
+      'dimensions ($width x $height).',
+    );
+  }
+  if (iterations <= 0) {
+    throw ArgumentError('iterations must be greater than zero.');
+  }
+
+  final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
+  final int requestId = _nextHeavyBlurRequestId++;
+  final Completer<Uint8List> completer = Completer<Uint8List>();
+  _heavyBlurRequests[requestId] = completer;
+  helperIsolateSendPort.send(
+    _HeavyBlurRequest(
+      requestId,
+      TransferableTypedData.fromList(<Uint8List>[rgbaPixels]),
+      width,
+      height,
+      iterations,
+    ),
+  );
+  return completer.future;
+}
+
+Uint8List _runHeavyBlurNative(
+  Uint8List rgbaPixels,
+  int width,
+  int height,
+  int iterations,
+) {
+  final int expectedBytes = width * height * 4;
+  if (rgbaPixels.lengthInBytes != expectedBytes) {
+    throw ArgumentError(
+      'rgbaPixels must contain exactly $expectedBytes bytes for the provided '
+      'dimensions ($width x $height).',
+    );
+  }
+
+  final ffi.Pointer<ffi.Uint8> pixelPtr =
+      ffi.calloc<ffi.Uint8>(rgbaPixels.lengthInBytes);
+  try {
+    pixelPtr.asTypedList(rgbaPixels.lengthInBytes).setAll(0, rgbaPixels);
+    _bindings.apply_heavy_blur(pixelPtr, width, height, iterations);
+    return Uint8List.fromList(pixelPtr.asTypedList(rgbaPixels.lengthInBytes));
+  } finally {
+    ffi.calloc.free(pixelPtr);
+  }
+}
+
 /// A longer lived native function, which occupies the thread calling it.
 ///
 /// Do not call these kind of native functions in the main isolate. They will
@@ -144,6 +203,33 @@ int _nextSumRequestId = 0;
 /// Mapping from [_SumRequest] `id`s to the completers corresponding to the correct future of the pending request.
 final Map<int, Completer<int>> _sumRequests = <int, Completer<int>>{};
 
+class _HeavyBlurRequest {
+  final int id;
+  final TransferableTypedData rgbaPixels;
+  final int width;
+  final int height;
+  final int iterations;
+
+  _HeavyBlurRequest(
+    this.id,
+    this.rgbaPixels,
+    this.width,
+    this.height,
+    this.iterations,
+  );
+}
+
+class _HeavyBlurResponse {
+  final int id;
+  final TransferableTypedData rgbaPixels;
+
+  _HeavyBlurResponse(this.id, this.rgbaPixels);
+}
+
+int _nextHeavyBlurRequestId = 0;
+final Map<int, Completer<Uint8List>> _heavyBlurRequests =
+    <int, Completer<Uint8List>>{};
+
 /// The SendPort belonging to the helper isolate.
 Future<SendPort> _helperIsolateSendPort = () async {
   // The helper isolate is going to send us back a SendPort, which we want to
@@ -168,6 +254,16 @@ Future<SendPort> _helperIsolateSendPort = () async {
         completer.complete(data.result);
         return;
       }
+      if (data is _HeavyBlurResponse) {
+        final Completer<Uint8List>? completer =
+            _heavyBlurRequests.remove(data.id);
+        if (completer != null) {
+          final Uint8List pixels =
+              data.rgbaPixels.materialize().asUint8List();
+          completer.complete(pixels);
+        }
+        return;
+      }
       throw UnsupportedError('Unsupported message type: ${data.runtimeType}');
     });
 
@@ -179,6 +275,22 @@ Future<SendPort> _helperIsolateSendPort = () async {
         if (data is _SumRequest) {
           final int result = _bindings.sum_long_running(data.a, data.b);
           final _SumResponse response = _SumResponse(data.id, result);
+          sendPort.send(response);
+          return;
+        }
+        if (data is _HeavyBlurRequest) {
+          final Uint8List rgba =
+              data.rgbaPixels.materialize().asUint8List();
+          final Uint8List blurred = _runHeavyBlurNative(
+            rgba,
+            data.width,
+            data.height,
+            data.iterations,
+          );
+          final _HeavyBlurResponse response = _HeavyBlurResponse(
+            data.id,
+            TransferableTypedData.fromList(<Uint8List>[blurred]),
+          );
           sendPort.send(response);
           return;
         }

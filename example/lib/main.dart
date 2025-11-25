@@ -20,6 +20,8 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   static const int _demoWidth = 160;
   static const int _demoHeight = 120;
+  static const int _heavyDemoWidth = 512;
+  static const int _heavyDemoHeight = 512;
 
   late int sumResult;
   late Future<int> sumAsyncResult;
@@ -27,7 +29,13 @@ class _MyAppState extends State<MyApp> {
   Uint8List? _originalPixels;
   ui.Image? _originalImage;
   ui.Image? _grayscaleImage;
-  bool _isProcessing = false;
+  bool _isGrayscaleProcessing = false;
+
+  Uint8List? _heavyPixels;
+  ui.Image? _heavyOriginalImage;
+  ui.Image? _heavyBlurredImage;
+  bool _isHeavyBlurProcessing = false;
+  String? _heavyBlurError;
 
   @override
   void initState() {
@@ -40,11 +48,13 @@ class _MyAppState extends State<MyApp> {
       2,
     );
     _prepareDemoImage();
+    _prepareHeavyDemoImage();
   }
 
   Future<void> _prepareDemoImage() async {
     final Uint8List demoPixels = _createDemoPixels(_demoWidth, _demoHeight);
-    final ui.Image original = await _decodeRgbaToImage(demoPixels);
+    final ui.Image original =
+        await _decodeRgbaToImage(demoPixels, _demoWidth, _demoHeight);
     if (!mounted) {
       return;
     }
@@ -55,13 +65,31 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  Future<void> _runOpenCvFilter() async {
-    final Uint8List? pixels = _originalPixels;
-    if (pixels == null || _isProcessing) {
+  Future<void> _prepareHeavyDemoImage() async {
+    final Uint8List pixels =
+        _createDemoPixels(_heavyDemoWidth, _heavyDemoHeight);
+    final ui.Image original = await _decodeRgbaToImage(
+      pixels,
+      _heavyDemoWidth,
+      _heavyDemoHeight,
+    );
+    if (!mounted) {
       return;
     }
     setState(() {
-      _isProcessing = true;
+      _heavyPixels = pixels;
+      _heavyOriginalImage = original;
+      _heavyBlurredImage = null;
+    });
+  }
+
+  Future<void> _runGrayscaleFilter() async {
+    final Uint8List? pixels = _originalPixels;
+    if (pixels == null || _isGrayscaleProcessing) {
+      return;
+    }
+    setState(() {
+      _isGrayscaleProcessing = true;
       _grayscaleImage = null;
     });
 
@@ -70,13 +98,14 @@ class _MyAppState extends State<MyApp> {
       _demoWidth,
       _demoHeight,
     );
-    final ui.Image filtered = await _decodeRgbaToImage(filteredPixels);
+    final ui.Image filtered =
+        await _decodeRgbaToImage(filteredPixels, _demoWidth, _demoHeight);
     if (!mounted) {
       return;
     }
     setState(() {
       _grayscaleImage = filtered;
-      _isProcessing = false;
+      _isGrayscaleProcessing = false;
     });
   }
 
@@ -98,19 +127,68 @@ class _MyAppState extends State<MyApp> {
     return data;
   }
 
-  Future<ui.Image> _decodeRgbaToImage(Uint8List pixels) async {
+  Future<ui.Image> _decodeRgbaToImage(
+    Uint8List pixels,
+    int width,
+    int height,
+  ) async {
     final Completer<ui.Image> completer = Completer<ui.Image>();
     ui.decodeImageFromPixels(
       pixels,
-      _demoWidth,
-      _demoHeight,
+      width,
+      height,
       ui.PixelFormat.rgba8888,
       completer.complete,
     );
     return completer.future;
   }
+  Future<void> _runHeavyBlurDemo() async {
+    final Uint8List? pixels = _heavyPixels;
+    if (pixels == null || _isHeavyBlurProcessing) {
+      return;
+    }
+    setState(() {
+      _isHeavyBlurProcessing = true;
+      _heavyBlurredImage = null;
+      _heavyBlurError = null;
+    });
 
-  Widget _buildDemoPreview(String label, ui.Image? image, String placeholder) {
+    try {
+      final Uint8List filtered = await ffi_plugin_look.applyHeavyBlurAsync(
+        pixels,
+        _heavyDemoWidth,
+        _heavyDemoHeight,
+        iterations: 1000,
+      );
+      final ui.Image image = await _decodeRgbaToImage(
+        filtered,
+        _heavyDemoWidth,
+        _heavyDemoHeight,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _heavyBlurredImage = image;
+        _isHeavyBlurProcessing = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isHeavyBlurProcessing = false;
+        _heavyBlurError = error.toString();
+      });
+    }
+  }
+
+  Widget _buildImagePreview({
+    required String label,
+    required ui.Image? image,
+    required double aspectRatio,
+    required Widget placeholder,
+  }) {
     return Expanded(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -122,7 +200,7 @@ class _MyAppState extends State<MyApp> {
           ),
           const SizedBox(height: 8),
           AspectRatio(
-            aspectRatio: _demoWidth / _demoHeight,
+            aspectRatio: aspectRatio,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.black26),
@@ -135,12 +213,7 @@ class _MyAppState extends State<MyApp> {
                         image: image,
                         filterQuality: FilterQuality.none,
                       )
-                    : Center(
-                        child: Text(
-                          placeholder,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
+                    : Center(child: placeholder),
               ),
             ),
           ),
@@ -209,26 +282,88 @@ class _MyAppState extends State<MyApp> {
                 spacerSmall,
                 Row(
                   children: [
-                    _buildDemoPreview(
-                      '원본',
-                      _originalImage,
-                      '생성 중...',
+                    _buildImagePreview(
+                      label: '원본',
+                      image: _originalImage,
+                      aspectRatio: _demoWidth / _demoHeight,
+                      placeholder: const Text('생성 중...'),
                     ),
                     const SizedBox(width: 16),
-                    _buildDemoPreview(
-                      '회색조',
-                      _grayscaleImage,
-                      _isProcessing ? '처리 중...' : '버튼을 눌러주세요',
+                    _buildImagePreview(
+                      label: '회색조',
+                      image: _grayscaleImage,
+                      aspectRatio: _demoWidth / _demoHeight,
+                      placeholder: Text(
+                        _isGrayscaleProcessing
+                            ? '처리 중...'
+                            : '버튼을 눌러주세요',
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ],
                 ),
                 spacerSmall,
                 ElevatedButton(
                   onPressed:
-                      (_originalPixels == null || _isProcessing)
+                      (_originalPixels == null || _isGrayscaleProcessing)
                           ? null
-                          : _runOpenCvFilter,
-                  child: Text(_isProcessing ? '처리 중...' : 'OpenCV 필터 실행'),
+                          : _runGrayscaleFilter,
+                  child: Text(
+                    _isGrayscaleProcessing ? '처리 중...' : 'OpenCV 필터 실행',
+                  ),
+                ),
+                spacerLarge,
+                const Text(
+                  '무거운 Gaussian Blur (Isolate + OpenCV)',
+                  style: textStyle,
+                  textAlign: TextAlign.center,
+                ),
+                spacerSmall,
+                const Text(
+                  '_helperIsolateSendPort를 통해 별도 isolate에서 반복 블러를 실행합니다.',
+                  textAlign: TextAlign.center,
+                ),
+                spacerSmall,
+                Row(
+                  children: [
+                    _buildImagePreview(
+                      label: '원본 512x512',
+                      image: _heavyOriginalImage,
+                      aspectRatio: _heavyDemoWidth / _heavyDemoHeight,
+                      placeholder: const Text('생성 중...'),
+                    ),
+                    const SizedBox(width: 16),
+                    _buildImagePreview(
+                      label: '블러 결과',
+                      image: _heavyBlurredImage,
+                      aspectRatio: _heavyDemoWidth / _heavyDemoHeight,
+                      placeholder: _isHeavyBlurProcessing
+                          ? const SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: CircularProgressIndicator(strokeWidth: 3),
+                            )
+                          : const Text('버튼을 눌러주세요'),
+                    ),
+                  ],
+                ),
+                if (_heavyBlurError != null) ...[
+                  spacerSmall,
+                  Text(
+                    '오류: $_heavyBlurError',
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                spacerSmall,
+                ElevatedButton(
+                  onPressed:
+                      (_heavyPixels == null || _isHeavyBlurProcessing)
+                          ? null
+                          : _runHeavyBlurDemo,
+                  child: Text(
+                    _isHeavyBlurProcessing ? '실행 중...' : '무거운 Blur 실행',
+                  ),
                 ),
               ],
             ),

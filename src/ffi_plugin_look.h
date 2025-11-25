@@ -47,6 +47,10 @@ FFI_PLUGIN_EXPORT void multiply_matrices(const double* a, const double* b,
 FFI_PLUGIN_EXPORT void apply_grayscale_filter(uint8_t* rgba_pixels, int width,
                                               int height);
 
+// Applies repeated heavy Gaussian blur iterations to stress native processing.
+FFI_PLUGIN_EXPORT void apply_heavy_blur(uint8_t* rgba_pixels, int width,
+                                        int height, int iterations);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
