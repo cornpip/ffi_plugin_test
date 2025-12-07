@@ -51,6 +51,17 @@ FFI_PLUGIN_EXPORT void apply_grayscale_filter(uint8_t* rgba_pixels, int width,
 FFI_PLUGIN_EXPORT void apply_heavy_blur(uint8_t* rgba_pixels, int width,
                                         int height, int iterations);
 
+// Converts a planar YUV420 frame into an RGB buffer with rotation, mirroring,
+// and letterboxing to the requested output dimensions.
+FFI_PLUGIN_EXPORT void preprocess_camera_frame(
+    const uint8_t* y_plane, int y_row_stride, const uint8_t* u_plane,
+    int u_row_stride, int u_pixel_stride, const uint8_t* v_plane,
+    int v_row_stride, int v_pixel_stride, int width, int height,
+    int rotation_degrees, int flip_horizontal, int target_width,
+    int target_height, uint8_t* out_rgb_buffer, double* out_scale,
+    int32_t* out_pad_x, int32_t* out_pad_y, int32_t* out_processed_width,
+    int32_t* out_processed_height);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

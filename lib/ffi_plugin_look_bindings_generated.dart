@@ -126,4 +126,105 @@ class FfiPluginLookBindings {
       >('apply_heavy_blur');
   late final _apply_heavy_blur = _apply_heavy_blurPtr
       .asFunction<void Function(ffi.Pointer<ffi.Uint8>, int, int, int)>();
+
+  /// Converts a planar YUV420 frame into an RGB buffer with rotation, mirroring,
+  /// and letterboxing to the requested output dimensions.
+  void preprocess_camera_frame(
+    ffi.Pointer<ffi.Uint8> y_plane,
+    int y_row_stride,
+    ffi.Pointer<ffi.Uint8> u_plane,
+    int u_row_stride,
+    int u_pixel_stride,
+    ffi.Pointer<ffi.Uint8> v_plane,
+    int v_row_stride,
+    int v_pixel_stride,
+    int width,
+    int height,
+    int rotation_degrees,
+    int flip_horizontal,
+    int target_width,
+    int target_height,
+    ffi.Pointer<ffi.Uint8> out_rgb_buffer,
+    ffi.Pointer<ffi.Double> out_scale,
+    ffi.Pointer<ffi.Int32> out_pad_x,
+    ffi.Pointer<ffi.Int32> out_pad_y,
+    ffi.Pointer<ffi.Int32> out_processed_width,
+    ffi.Pointer<ffi.Int32> out_processed_height,
+  ) {
+    return _preprocess_camera_frame(
+      y_plane,
+      y_row_stride,
+      u_plane,
+      u_row_stride,
+      u_pixel_stride,
+      v_plane,
+      v_row_stride,
+      v_pixel_stride,
+      width,
+      height,
+      rotation_degrees,
+      flip_horizontal,
+      target_width,
+      target_height,
+      out_rgb_buffer,
+      out_scale,
+      out_pad_x,
+      out_pad_y,
+      out_processed_width,
+      out_processed_height,
+    );
+  }
+
+  late final _preprocess_camera_framePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Uint8>,
+            ffi.Int,
+            ffi.Pointer<ffi.Uint8>,
+            ffi.Int,
+            ffi.Int,
+            ffi.Pointer<ffi.Uint8>,
+            ffi.Int,
+            ffi.Int,
+            ffi.Int,
+            ffi.Int,
+            ffi.Int,
+            ffi.Int,
+            ffi.Int,
+            ffi.Int,
+            ffi.Pointer<ffi.Uint8>,
+            ffi.Pointer<ffi.Double>,
+            ffi.Pointer<ffi.Int32>,
+            ffi.Pointer<ffi.Int32>,
+            ffi.Pointer<ffi.Int32>,
+            ffi.Pointer<ffi.Int32>,
+          )
+        >
+      >('preprocess_camera_frame');
+  late final _preprocess_camera_frame = _preprocess_camera_framePtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Uint8>,
+          int,
+          ffi.Pointer<ffi.Uint8>,
+          int,
+          int,
+          ffi.Pointer<ffi.Uint8>,
+          int,
+          int,
+          int,
+          int,
+          int,
+          int,
+          int,
+          int,
+          ffi.Pointer<ffi.Uint8>,
+          ffi.Pointer<ffi.Double>,
+          ffi.Pointer<ffi.Int32>,
+          ffi.Pointer<ffi.Int32>,
+          ffi.Pointer<ffi.Int32>,
+          ffi.Pointer<ffi.Int32>,
+        )
+      >();
 }

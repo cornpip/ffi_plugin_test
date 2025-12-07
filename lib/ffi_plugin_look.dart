@@ -185,6 +185,141 @@ final DynamicLibrary _dylib = () {
 /// The bindings to the native functions in [_dylib].
 final FfiPluginLookBindings _bindings = FfiPluginLookBindings(_dylib);
 
+final _ReusableUint8Pointer _yPlaneBuffer = _ReusableUint8Pointer();
+final _ReusableUint8Pointer _uPlaneBuffer = _ReusableUint8Pointer();
+final _ReusableUint8Pointer _vPlaneBuffer = _ReusableUint8Pointer();
+final _ReusableUint8Pointer _outputBuffer = _ReusableUint8Pointer();
+
+PreprocessResult preprocessCameraFrame({
+  required Uint8List yPlane,
+  required int yRowStride,
+  required Uint8List uPlane,
+  required int uRowStride,
+  required int uPixelStride,
+  required Uint8List vPlane,
+  required int vRowStride,
+  required int vPixelStride,
+  required int width,
+  required int height,
+  required int rotationDegrees,
+  required bool flipHorizontal,
+  required int targetWidth,
+  required int targetHeight,
+}) {
+  if (width <= 0 ||
+      height <= 0 ||
+      targetWidth <= 0 ||
+      targetHeight <= 0) {
+    throw ArgumentError('Invalid dimensions provided for preprocessing.');
+  }
+
+  final int outputLength = targetWidth * targetHeight * 3;
+  final ffi.Pointer<ffi.Uint8> yPtr =
+      _yPlaneBuffer.ensureCapacity(yPlane.length);
+  final ffi.Pointer<ffi.Uint8> uPtr =
+      _uPlaneBuffer.ensureCapacity(uPlane.length);
+  final ffi.Pointer<ffi.Uint8> vPtr =
+      _vPlaneBuffer.ensureCapacity(vPlane.length);
+  final ffi.Pointer<ffi.Uint8> outPtr =
+      _outputBuffer.ensureCapacity(outputLength);
+  final ffi.Pointer<ffi.Double> scalePtr = ffi.calloc<ffi.Double>();
+  final ffi.Pointer<ffi.Int32> padXPtr = ffi.calloc<ffi.Int32>();
+  final ffi.Pointer<ffi.Int32> padYPtr = ffi.calloc<ffi.Int32>();
+  final ffi.Pointer<ffi.Int32> orientedWidthPtr = ffi.calloc<ffi.Int32>();
+  final ffi.Pointer<ffi.Int32> orientedHeightPtr = ffi.calloc<ffi.Int32>();
+
+  try {
+    yPtr.asTypedList(yPlane.length).setAll(0, yPlane);
+    uPtr.asTypedList(uPlane.length).setAll(0, uPlane);
+    vPtr.asTypedList(vPlane.length).setAll(0, vPlane);
+
+    _bindings.preprocess_camera_frame(
+      yPtr,
+      yRowStride,
+      uPtr,
+      uRowStride,
+      uPixelStride,
+      vPtr,
+      vRowStride,
+      vPixelStride,
+      width,
+      height,
+      rotationDegrees,
+      flipHorizontal ? 1 : 0,
+      targetWidth,
+      targetHeight,
+      outPtr,
+      scalePtr,
+      padXPtr,
+      padYPtr,
+      orientedWidthPtr,
+      orientedHeightPtr,
+    );
+
+    return PreprocessResult(
+      rgbBytes: Uint8List.fromList(outPtr.asTypedList(outputLength)),
+      scale: scalePtr.value,
+      padX: padXPtr.value,
+      padY: padYPtr.value,
+      orientedWidth: orientedWidthPtr.value,
+      orientedHeight: orientedHeightPtr.value,
+    );
+  } finally {
+    ffi.calloc.free(scalePtr);
+    ffi.calloc.free(padXPtr);
+    ffi.calloc.free(padYPtr);
+    ffi.calloc.free(orientedWidthPtr);
+    ffi.calloc.free(orientedHeightPtr);
+  }
+}
+
+void disposePreprocessBuffers() {
+  _yPlaneBuffer.dispose();
+  _uPlaneBuffer.dispose();
+  _vPlaneBuffer.dispose();
+  _outputBuffer.dispose();
+}
+
+class PreprocessResult {
+  PreprocessResult({
+    required this.rgbBytes,
+    required this.scale,
+    required this.padX,
+    required this.padY,
+    required this.orientedWidth,
+    required this.orientedHeight,
+  });
+
+  final Uint8List rgbBytes;
+  final double scale;
+  final int padX;
+  final int padY;
+  final int orientedWidth;
+  final int orientedHeight;
+}
+
+class _ReusableUint8Pointer {
+  ffi.Pointer<ffi.Uint8>? _pointer;
+  int _capacity = 0;
+
+  ffi.Pointer<ffi.Uint8> ensureCapacity(int length) {
+    if (_pointer == null || length > _capacity) {
+      dispose();
+      _pointer = ffi.calloc<ffi.Uint8>(length);
+      _capacity = length;
+    }
+    return _pointer!;
+  }
+
+  void dispose() {
+    if (_pointer != null) {
+      ffi.calloc.free(_pointer!);
+      _pointer = null;
+      _capacity = 0;
+    }
+  }
+}
+
 
 /// A request to compute `sum`.
 ///
