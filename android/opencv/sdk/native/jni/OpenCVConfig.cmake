@@ -32,14 +32,14 @@
 # Note that CMake 2.8.3 introduced CMAKE_CURRENT_LIST_DIR. We reimplement it
 # for older versions of CMake to support these as well.
 if(CMAKE_VERSION VERSION_LESS "2.8.3")
-  get_filename_component(CMAKE_CURRENT_LIST_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+  get_filename_component(CMAKE_CURRENT_LIST_DIR "OpenCVConfig.cmake" PATH)
 endif()
 
 if(NOT DEFINED OpenCV_CONFIG_SUBDIR)
   set(OpenCV_CONFIG_SUBDIR "/abi-${ANDROID_NDK_ABI_NAME}")
 endif()
 
-set(OpenCV_CONFIG_PATH "${CMAKE_CURRENT_LIST_DIR}${OpenCV_CONFIG_SUBDIR}")
+set(OpenCV_CONFIG_PATH ".")
 if(EXISTS "${OpenCV_CONFIG_PATH}/OpenCVConfig.cmake")
   include("${OpenCV_CONFIG_PATH}/OpenCVConfig.cmake")
 else()

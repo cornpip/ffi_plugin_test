@@ -5,17 +5,19 @@ cmake_minimum_required(VERSION 3.10)
 
 project(ffi_plugin_look_library VERSION 0.0.1 LANGUAGES C CXX)
 
+get_filename_component(PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
+
 add_library(ffi_plugin_look SHARED
-  "ffi_plugin_look.cpp"
+  "${PROJECT_ROOT}/src/ffi_plugin_look.cpp"
 )
 
-set(OPENCV_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/opencv/sdk/native")
+set(OPENCV_ROOT "${CMAKE_CURRENT_LIST_DIR}/sdk/native")
 set(OPENCV_INCLUDE_DIR "${OPENCV_ROOT}/jni/include")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set_target_properties(ffi_plugin_look PROPERTIES
-  PUBLIC_HEADER ffi_plugin_look.h
+  PUBLIC_HEADER "${PROJECT_ROOT}/src/ffi_plugin_look.h"
   OUTPUT_NAME "ffi_plugin_look"
 )
 

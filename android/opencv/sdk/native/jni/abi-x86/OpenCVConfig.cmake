@@ -71,12 +71,12 @@ endif()
 # Note that CMake 2.8.3 introduced CMAKE_CURRENT_LIST_DIR. We reimplement it
 # for older versions of CMake to support these as well.
 if(CMAKE_VERSION VERSION_LESS "2.8.3")
-  get_filename_component(CMAKE_CURRENT_LIST_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+  get_filename_component(CMAKE_CURRENT_LIST_DIR "OpenCVConfig.cmake" PATH)
 endif()
 
 # Extract the directory where *this* file has been installed (determined at cmake run-time)
 # Get the absolute path with no ../.. relative marks, to eliminate implicit linker warnings
-get_filename_component(OpenCV_CONFIG_PATH "${CMAKE_CURRENT_LIST_DIR}" REALPATH)
+get_filename_component(OpenCV_CONFIG_PATH "." REALPATH)
 get_filename_component(OpenCV_INSTALL_PATH "${OpenCV_CONFIG_PATH}/../../../../" REALPATH)
 
 # Search packages for host system instead of packages for target system.
@@ -109,6 +109,13 @@ if(OpenCV_ANDROID_NATIVE_API_LEVEL GREATER ANDROID_NATIVE_API_LEVEL)
 endif()
 
 
+if(NOT TARGET ippicv)
+  add_library(ippicv STATIC IMPORTED)
+  set_target_properties(ippicv PROPERTIES
+    IMPORTED_LINK_INTERFACE_LIBRARIES ""
+    IMPORTED_LOCATION "${OpenCV_INSTALL_PATH}/sdk/native/3rdparty/libs/x86/libippicv.a"
+  )
+endif()
 
 
 

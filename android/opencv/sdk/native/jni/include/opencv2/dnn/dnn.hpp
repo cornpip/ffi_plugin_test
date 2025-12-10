@@ -46,7 +46,7 @@
 #include <opencv2/core.hpp>
 #include "opencv2/core/async.hpp"
 
-#include "../dnn/version.hpp"
+#include "version.hpp"
 
 #include <opencv2/dnn/dict.hpp>
 
