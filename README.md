@@ -90,3 +90,6 @@ For help getting started with Flutter, view our
 [online documentation](https://docs.flutter.dev), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
 
+## Version
+- Flutter: 3.38.4
+- Opencv: 4.12.0
