@@ -1,0 +1,22 @@
+PODS:
+  - ffi_plugin_look (0.0.1):
+    - Flutter
+  - Flutter (1.0.0)
+
+DEPENDENCIES:
+  - ffi_plugin_look (from `.symlinks/plugins/ffi_plugin_look/ios`)
+  - Flutter (from `Flutter`)
+
+EXTERNAL SOURCES:
+  ffi_plugin_look:
+    :path: ".symlinks/plugins/ffi_plugin_look/ios"
+  Flutter:
+    :path: Flutter
+
+SPEC CHECKSUMS:
+  ffi_plugin_look: b1b9c3a5b107dbffd4bbfe8739bd337c081e4528
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+
+PODFILE CHECKSUM: 251cb053df7158f337c0712f2ab29f4e0fa474ce
+
+COCOAPODS: 1.16.2

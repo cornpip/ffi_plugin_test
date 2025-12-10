@@ -29,7 +29,7 @@ A new Flutter project.
     'OTHER_LDFLAGS' => '$(inherited) -lc++'
   }
   s.dependency 'Flutter'
-  s.platform = :ios, '12.0'
+  s.platform = :ios, '13.0'
 
   s.swift_version = '5.0'
 end
