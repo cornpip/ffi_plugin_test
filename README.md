@@ -1,6 +1,14 @@
-# ffi_plugin_look
+# ffi_plugin_sample
 
-A new Flutter project.
+## Version
+- Flutter: 3.38.4
+- Opencv: 4.12.0
+
+## IOS OpenCV
+- Download OpenCV SDK IOS Version and place opencv2.framwork under the ios/opencv folder.
+
+
+---
 
 ## Getting Started
 
@@ -83,16 +91,3 @@ For example, see `sum` in `lib/ffi_plugin_look.dart`.
 Longer-running functions should be invoked on a helper isolate to avoid
 dropping frames in Flutter applications.
 For example, see `sumAsync` in `lib/ffi_plugin_look.dart`.
-
-## Flutter help
-
-For help getting started with Flutter, view our
-[online documentation](https://docs.flutter.dev), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
-## Version
-- Flutter: 3.38.4
-- Opencv: 4.12.0
-
-## IOS OpenCV
-- Download OpenCV SDK IOS Version and place opencv2.framwork under the ios/opencv folder.
