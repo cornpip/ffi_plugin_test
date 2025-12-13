@@ -4,11 +4,12 @@
 - Flutter: 3.38.4
 - Opencv: 4.12.0
 
-## IOS OpenCV
+## Support
+- Android
+- iOS
+
+## iOS OpenCV Guide
 - Download OpenCV SDK IOS Version and place opencv2.framwork under the ios/opencv folder.
-
-
----
 
 ## Getting Started
 
